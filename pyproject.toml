@@ -1,0 +1,38 @@
+[build-system]
+
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "geogridstore"
+description = ""
+authors = [{name = "Tobin Ford", email = "tobin.ford@nrel.gov"}]
+license = {text = "BSD-3"}
+readme = "README.md"
+requires-python = ">=3.9.0"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+]
+
+dependencies = [
+    "xarray",
+    "dask",
+    "dask[distributed]",
+    "pandas",
+    "numpy"
+]
+dynamic = ["version"]
+
+[tool.setuptools.packages.find]
+include = ["geogridstore"]
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+addopts = [
+    "-p no:warnings",
+    "--verbose",
+]
