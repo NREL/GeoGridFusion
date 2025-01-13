@@ -23,7 +23,8 @@ dependencies = [
     "dask",
     "dask[distributed]",
     "pandas",
-    "numpy"
+    "numpy",
+    "rtree",
 ]
 dynamic = ["version"]
 
