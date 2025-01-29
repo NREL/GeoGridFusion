@@ -4,35 +4,53 @@ Functions to manage rtree spatial index
 
 import numpy as np
 from pyproj import Transformer
+import sys
 import os
 
 from scipy.spatial import cKDTree
 
-from geogridstore import INDEX_PATH
 import geogridstore
 
-def unform_coordinates_array(grid_points_fn: str) -> np.ndarray:
+def unform_coordinates_array(resolution: str) ->np.ndarray:
     """
     grab-prebaked grid coordinates array
-
-    grid_points_fn: str
-        name of file storing compressed numpy array.
-        THIS WILL CHANGE DURING DEVELOPMENT
     """
+
+    grid_points_fn = f"{resolution}km-points.npz"
 
     with open(os.path.join(geogridstore.TREE_BINARIES_DIR, grid_points_fn), "rb") as fp:
         npz_file = np.load(fp)
         grid_points = npz_file["arr_0"]  # use numpy default key
 
+
+    module = sys.modules["geogridstore"]
+    setattr(module, grid_points_fn.split(".")[0], grid_points)
+
     return grid_points
 
+def get_search_tree(name: str, resolution: str) -> cKDTree:
+    """
+    name of tree
+    ex: tree_4km, tree_10km
+    """
 
-# WARNING: this can produce duplicate indexes
-# should be able to pass the tree into this, so we can build it once
-def coords_to_unique_index(
+    module = sys.modules["geogridstore"]
+
+    tree = getattr(module, name)
+
+    if tree is None:
+        reference_grid_coordinates = unform_coordinates_array(resolution=resolution)
+        tree = cKDTree(data=reference_grid_coordinates)
+
+        setattr(module, name, tree)
+
+    return tree
+
+
+# WARNING: can produce duplicate indexes
+def coords_to_ref_index(
     coords: np.ndarray, 
-    reference_grid_coordinates: np.ndarray = None,
-    grid_points_fn: str = None,
+    tree: cKDTree,
     ) -> np.ndarray:
     """
     Maps points to their nearest unique grid index at a specific resolution as specified by "grid_points_fn".
@@ -53,22 +71,13 @@ def coords_to_unique_index(
         1 dimensional numpy array of nearest indexes in the precomputed grid coresponding to each entry in the coordinates array input
     """
 
-
-    if reference_grid_coordinates is None:
-        reference_grid_coordinates = unform_coordinates_array(grid_points_fn=grid_points_fn)
-
-    tree = cKDTree(data=reference_grid_coordinates)
-
     # this is probably cartesian distance in the 2d plane of the tree
     # not meaningful for coordinates on earth (we need spherical distance)
     # can compute this using haversine distance indexing into the tree
     distance, idx =  tree.query(coords)
 
-    # check for dupliates
-    # this is inefficient, determine fix later
-    if len(idx) != len(np.unique(idx)):
-        raise ValueError("Duplicate reference gid created")
-    
+    # duplicates are okay here
+    # we need to be aware of this though
     return idx
    
 

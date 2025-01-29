@@ -10,6 +10,8 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 import yaml
+import zarr
+import zarr.errors
 
 from geogridstore import (
     index,
@@ -46,9 +48,6 @@ def add_user_path(
         it is possible to use a lazy schema but we will not do this
     """
 
-    # we assume there is nothing at the path already
-    # add check for this
-
     if not isinstance(template_ds, xr.Dataset):
         raise ValueError("template_ds must be an Xarray Dataset.")
 
@@ -64,7 +63,10 @@ def add_user_path(
         'grid_resolution': grid_resolution
     })
 
-    xr.zeros_like(template_ds).to_zarr(store=path, compute=False)
+    try:
+        xr.zeros_like(template_ds).to_zarr(store=path, compute=False)
+    except zarr.errors.ContainsGroupError:
+        raise zarr.errors.ContainsGroupError(f"A zarr store already exists at {path}, operation failed.")
 
     with open(USER_PATHS, 'w') as user_paths:
         yaml.safe_dump(user_config, user_paths)
@@ -103,9 +105,7 @@ def remove_user_path(
     
 def get(
     source : NestedNamespace,
-    # source : str,
-    # group : str,
-    # seperate : bool,
+    sort : bool = True
 ) -> Union[tuple[xr.Dataset, pd.DataFrame], xr.Dataset]:
     """
     Extract a weather xarray dataset and metadata pandas dataframe from your zarr store. 
@@ -127,6 +127,8 @@ def get(
         *From `pvdeg.store.store` docstring*   
         Hourly PVGIS data will be saved to "PVGIS-1hr", 30 minute PVGIS to "PVGIS-30min", similarly 15 minute PVGIS will be saved to "PVGIS-15min"
 
+    sort : bool
+        sort by gid on load from disk. disable for potentially significant speedup on larger datasets
    
     Returns
     -------
@@ -139,9 +141,91 @@ def get(
         store=source.path
     )
 
+    if sort:
+        return combined_ds.sortby("gid")
     return combined_ds
 
-def store(dataset: xr.Dataset, store: NestedNamespace, grid_points_fn : str, overwrite: bool = False) -> None:
+def _check_matching_config(new: xr.Dataset, store: NestedNamespace) -> None:
+    if "time" in new.sizes and int(store.periods) != new.sizes["time"]:
+        return ValueError(f"""
+            from user_paths.yaml
+            dataset time axis (periods) do not match store periods.
+            store   time entries | {store.periods}
+            dataset time entries | {new.sizes["time"]}
+        """)
+
+# TODO: add datatype check to each data_var
+def _check_matching_data_vars(existing: xr.Dataset, new: xr.Dataset) -> None:
+    """
+    Check if the data variables in two xarray.Datasets match.
+
+    Parameters:
+    - existing: The existing xarray.Dataset.
+    - new: The new xarray.Dataset.
+
+    Raises:
+    - ValueError: If the data variables do not match, with details about the differences.
+    """
+    existing_vars = set(existing.data_vars)
+    new_vars = set(new.data_vars)
+
+    if existing_vars != new_vars:
+        missing_in_new = existing_vars - new_vars
+        missing_in_existing = new_vars - existing_vars
+
+        allowed_vars = "\n".join(
+            f"    {var} {tuple(existing[var].dims)} {existing[var].dtype}"
+            for var in existing.data_vars
+        )
+
+        error_message = "Data variables in the datasets do not match.\n"
+        if missing_in_new:
+            error_message += f"Missing Variables in the new dataset: {missing_in_new}\n"
+        if missing_in_existing:
+            error_message += f"Extra variables in the new dataset: {missing_in_existing}\n"
+
+        error_message += (
+            "Only the following data_var are allowed from the new dataset:\n"
+            f"Data variables:\n{allowed_vars}"
+        )
+
+        raise ValueError(error_message)
+
+def _check_matching_time_coord(existing: xr.Dataset, new: xr.Dataset) -> None:
+    # currently we only support datasets with a time axis
+    if "time" not in existing.coords:
+        raise ValueError("The existing dataset does not have a 'time' coordinate.")
+    if "time" not in new.coords:
+        raise ValueError("The new dataset is missing the 'time' coordinate.")
+
+    # Check if the time coordinates match
+    if not existing.time.equals(new.time):
+        raise ValueError(
+            f"The time coordinates do not match.\n"
+            f"Existing time: {existing.time.values}\n"
+            f"New time: {new.time.values}"
+        )
+
+def _map_dataset_to_ref_index(dataset: xr.Dataset, store: NestedNamespace) -> xr.Dataset:
+    """convert existing dataset gids to meaningful reference grid index"""
+    search_coords = np.column_stack([dataset.latitude.values, dataset.longitude.values])
+
+    resolution = store.grid_resolution
+    tree_name = f"tree_{resolution}km"
+    tree = index.get_search_tree(name=tree_name, resolution=resolution)
+
+    ref_grid_index = index.coords_to_ref_index(
+        coords=search_coords,
+        tree=tree
+    )
+
+    remapped_gid_ds = dataset.assign_coords(gid=("gid", ref_grid_index))
+
+    return remapped_gid_ds
+
+
+
+def store(dataset: xr.Dataset, store: NestedNamespace, map_index: bool = True, remove_duplicates: bool = True) -> None:
     """
     Add geospatial meteorolical data to your zarr store. Data will be saved to the correct group based on its periodicity.
 
@@ -155,39 +239,40 @@ def store(dataset: xr.Dataset, store: NestedNamespace, grid_points_fn : str, ove
         dataset to store with "ref_grid_id" or "gid" dimension, and "latitude:" and "longitude" coordinates
     name: str
         geogridfusion datastore name to utilize
-    map_index: str
+    map_index: bool
         remap index "gid" to pre-baked uniform resolution grid indexes. 
         unless your input data has spatially significant and unique indexes like a geospatial id "gid", do not turn this off.
-    overwrite: bool (default = False)
-        overwrite entires with identical indexes if they already exist
+    remove_duplicates: bool
+        remove duplicate points in new dataset at resolution of store provided
     """
 
-    # open store, check if time entry length (periods) in the store yaml match the provided dataset
-    if "time" in dataset.sizes and int(store.periods) != dataset.sizes["time"]:
-        return ValueError(f"""
-            dataset time axis (periods) do not match store periods.
-            store   time entries | {store.periods}
-            dataset time entries | {dataset.sizes["time"]}
-        """)
+    # check if new dataset aligns with existing
+    #############################################
+    # check if dataset matches yaml config
+    _check_matching_config(new=dataset, store=store)
 
-    ref_coordinates = index.unform_coordinates_array(grid_points_fn=grid_points_fn)
+    existing_store = xr.open_zarr(store.path)
 
-    # remap indexes    
-    search_coords = np.column_stack([dataset.latitude.values, dataset.longitude.values])
-    ref_grid_index = index.coords_to_unique_index(coords=search_coords, reference_grid_coordinates=ref_coordinates) # map to new grid indexes
-    # ref grid index can only return unique values but we should deal with this differently
+    # check if shapes and coordinate values match
+    _check_matching_time_coord(existing=existing_store, new=dataset)
+    _check_matching_data_vars(existing=existing_store, new=dataset)
 
-    # overwrite spatial index with meaningful reference index
-    remapped_gid_ds = dataset.assign_coords(gid=("gid", ref_grid_index))
+    remapped_gid_ds = _map_dataset_to_ref_index(
+        dataset=dataset,
+        store=store
+    ) if map_index else dataset
 
-    # select only new gids from the input dataset to save
-    existing_gids = xr.open_zarr(store="dir-a").gid.values
-    non_overlaping_ref_grid_index = np.setdiff1d(ref_grid_index, existing_gids)
-    no_overlap_remapped_ds = remapped_gid_ds.sel(gid=non_overlaping_ref_grid_index)
+    if remove_duplicates:
+        remapped_gid_ds.groupby("gid").first()
 
-    # no overwriting exisitng entries
-    no_overlap_remapped_ds.to_zarr(store="dir-a", mode="a", append_dim="gid")
+    # save to existing dataset
+    ##########################
+    new_gids = np.setdiff1d(remapped_gid_ds.gid, existing_store.gid)
+    cleaned_ds = remapped_gid_ds.sel({"gid": new_gids}) # downsample to only new points
 
+    # save back to store
+    #####################
+    cleaned_ds.to_zarr(store=store.path, mode='a', append_dim="gid")
 
 def display_paths() -> None:
     """

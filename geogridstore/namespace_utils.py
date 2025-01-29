@@ -1,3 +1,4 @@
+import time
 import yaml
 import sys
 import os
@@ -35,3 +36,15 @@ def load_store_configs():
     module = sys.modules['geogridstore']
     for key, value in user_paths_data.__dict__.items():
         setattr(module, key, value)
+
+# move out of this
+TREE_NAMES = [
+    'tree_10km',
+    'tree_4km'
+]
+
+def empty_search_trees():
+    module = sys.modules['geogridstore']
+
+    for name in TREE_NAMES:
+        setattr(module, name, None)
