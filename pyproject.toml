@@ -4,7 +4,7 @@ requires = ["setuptools>=64", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "geogridstore"
+name = "geogridfusion"
 description = ""
 authors = [{name = "Tobin Ford", email = "tobin.ford@nrel.gov"}]
 license = {text = "BSD-3"}
@@ -24,12 +24,12 @@ dependencies = [
     "dask[distributed]",
     "pandas",
     "numpy",
-    "rtree",
+    "scipy",
 ]
 dynamic = ["version"]
 
 [tool.setuptools.packages.find]
-include = ["geogridstore"]
+include = ["geogridfusion"]
 
 [tool.pytest.ini_options]
 testpaths = "tests"

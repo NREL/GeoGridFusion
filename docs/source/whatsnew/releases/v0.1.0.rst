@@ -1,0 +1,23 @@
+.. _whatsnew_0100:
+
+v0.1.0 (2023-06-28)
+=======================
+
+First official release.
+
+* GeoGridFusion populated with various classes, including functions for:  
+
+  - indexing spatial data.  
+  - re-mapping spatially meaningless gids to meaningful reference ids for uniqueness checks.  
+  - storing spatial data.  
+
+* Re-structured folders to include Documentation, Versioning and Setup.
+* Tutorial examples available on the tutorials folder to run through Jupyter, Collab or Binder
+* Added Sphinx Documentation
+.. 
+  * Added Versioneer
+  * pytests implemented for most functions
+
+Contributors
+~~~~~~~~~~~~
+* Tobin Ford (:ghuser:`tobin-ford`)

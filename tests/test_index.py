@@ -1,9 +1,9 @@
-import geogridstore
+import geogridfusion
 import numpy as np
 import pandas as pd
 import pytest
 
-REF_COORDS_4km = geogridstore.index.unform_coordinates_array("4km-points.npz")
+REF_COORDS_4km = geogridfusion.index.unform_coordinates_array("4km-points.npz")
 
 def test_mapping_4km():
     search_coords = np.array([
@@ -39,7 +39,7 @@ def test_mapping_4km():
        [  39.90716844, -103.50953251]])
 
 
-    grid_index = geogridstore.index.coords_to_ref_index(coords=search_coords, reference_grid_coordinates=REF_COORDS_4km)
+    grid_index = geogridfusion.index.coords_to_ref_index(coords=search_coords, reference_grid_coordinates=REF_COORDS_4km)
     
     index_res = np.array([
         6085385, 6260808, 6285766, 6260757, 6019332, 5935175, 6253727,
@@ -61,4 +61,4 @@ def test_mapping_duplicate_reference_index():
     # a, b will resolve to same reference grid index when mapped
     # this test will detect that the duplicate is generated
     with pytest.raises(ValueError, match="Duplicate reference gid created"):
-        geogridstore.index.coords_to_ref_index(coords=problem_coords, grid_points_fn="4km-points.npz")
+        geogridfusion.index.coords_to_ref_index(coords=problem_coords, grid_points_fn="4km-points.npz")
