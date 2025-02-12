@@ -2,3 +2,7 @@
 *.egg
 *.yaml
 *.pyc
+
+
+dist/
+saves/

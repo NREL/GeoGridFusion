@@ -84,7 +84,7 @@ Installation
 
 Install with:
 
-    pip install geogridstore
+    pip install geogridfusion
 
 For developer installation, clone the repository, navigate to the folder location and install as:
 
