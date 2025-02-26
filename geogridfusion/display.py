@@ -1,5 +1,6 @@
 from IPython.display import display, HTML
 
+
 def display_user_paths(paths: dict):
     """
     Display a dictionary of paths in a user-friendly table format in IPython.

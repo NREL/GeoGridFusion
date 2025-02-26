@@ -1,20 +1,20 @@
 from importlib.metadata import version
 import logging
 
-from .namespace_utils import load_store_configs, empty_search_trees 
+from .namespace_utils import load_store_configs, empty_search_trees
 from .config import *
 
 #     modules     #
 ###################
-from .geogridfusion import * # top level functions
+from .geogridfusion import *  # top level functions
 
 # should index functionality be available without the extra import (import geogridfusion.index)
-from . import index 
+from . import index
 
 ###################
 
-load_store_configs() # load paths from yaml
-empty_search_trees() # define empty search trees
+load_store_configs()  # load paths from yaml
+empty_search_trees()  # define empty search trees
 
 
 __version__ = version("geogridfusion")

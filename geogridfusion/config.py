@@ -1,4 +1,4 @@
-""" 
+"""
 Configuration file for geogridfusion package
 """
 
@@ -13,9 +13,9 @@ DATA_DIR = GEOGRIDFUSION / "data"
 TEST_DIR = GEOGRIDFUSION.parent / "tests"
 TEST_DATA_DIR = GEOGRIDFUSION.parent / "tests" / "data"
 
-INDEX_PATH = Path.joinpath(GEOGRIDFUSION.parent / "spatial-index") 
+INDEX_PATH = Path.joinpath(GEOGRIDFUSION.parent / "spatial-index")
 
 # this should be renamed
-TREE_BINARIES_DIR = GEOGRIDFUSION.parent / "grid-points-baked"
+TREE_BINARIES_DIR = GEOGRIDFUSION.parent / "grid-points-baked/"
 
 USER_PATHS = GEOGRIDFUSION / "user_paths" / "user_paths.yaml"

@@ -2,7 +2,8 @@
 
 This repo contains utilities to allow for the storage of user downloaded geospatial weather data by providing a local datastore for storage and spatial queries, supporting large-scale analyses without the need for high-performance computing (HPC) resources.
 
-<!-- <table>
+<table>
+
 <tr>
   <td>License</td>
   <td>
@@ -11,32 +12,27 @@ This repo contains utilities to allow for the storage of user downloaded geospat
     </a>
 </td>
 </tr>
-<tr> -->
-  <!-- <td>Publications</td>
+<tr>
+  <td>Documentation</td>
   <td>
-     <a href="https://doi.org/10.5281/zenodo.8088578"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.8088578.svg" alt="DOI"></a>
-  </td> -->
-<!-- </tr>
-<tr> -->
-  <!-- <td>Documentation</td>
-  <td>
-	<a href='https://PVDegradationTools.readthedocs.io'>
+	<a href='https://geogridfusion.readthedocs.io'>
 	    <img src='https://readthedocs.org/projects/pvdegradationtools/badge/?version=stable' alt='Documentation Status' />
-	</a> -->
-  <!-- </td> -->
-<!-- </tr>
+	</a>
+  </td>
+</tr>
+
 <tr>
   <td>Build status</td>
   <td>
-   <a href="https://github.com/NREL/PVDegradationTools/actions/workflows/pytest.yml?query=branch%3Amain">
-      <img src="https://github.com/NREL/PVDegradationTools/actions/workflows/pytest.yml/badge.svg?branch=main" alt="GitHub Actions Testing Status" />
+   <a href="https://github.com/NREL/GeoGridFusion/actions/workflows/pytest.yml?query=branch%3Amain">
+      <img src="https://github.com/NREL/GeoGridFusion/actions/workflows/pytest.yml/badge.svg?branch=main" alt="GitHub Actions Testing Status" />
    </a>
-   <a href="https://codecov.io/gh/NREL/PVDegradationTools" >
+   <!-- <a href="https://codecov.io/gh/NREL/PVDegradationTools" >
    <img src="https://codecov.io/gh/NREL/PVDegradationTools/graph/badge.svg?token=4I24S8BTG7"/>
-   </a>
+   </a> -->
   </td>
-</tr> -->
-<!-- </table> -->
+</tr> 
+</table>
 
 Tutorials
 =========

@@ -41,7 +41,7 @@ If you use this calculator in a published work, please cite:
 
 .. code-block::
 
-   Ford, Tobin "GeoGridFusion" NREL Github 2025, Software Record SWR 25-19.
+   Ford, Tobin. "GeoGridFusion" NREL Github 2025, Software Record SWR 25-19.
 
 .. 
    Please also cite the DOI corresponding to the specific version that you used.
