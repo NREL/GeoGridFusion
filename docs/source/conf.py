@@ -12,8 +12,8 @@ sys.path.insert(0, os.path.abspath("../../"))
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "pvdeg"
-copyright = "2023, NREL"
+project = "GeoGridFusion"
+copyright = "2025, NREL"
 author = "Alliance For Sustainable Energy LLC"
 
 import geogridfusion
@@ -75,7 +75,7 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # The short X.Y version.
-version = "%s" % (pvdeg.__version__)
+version = "%s" % (geogridfusion.__version__)
 # The full version, including alpha/beta/rc tags.
 release = version
 
@@ -89,8 +89,8 @@ pygments_style = "sphinx"
 
 # List of external link aliases.  Allows use of :pull:`123` to autolink that PR
 extlinks = {
-    "issue": ("https://github.com/NREL/PVDegradationTools/issues/%s", "issue %s"),
-    "pull": ("https://github.com/NREL/PVDegradationTools/pull/%s", "pull %s"),
+    # "issue": ("https://github.com/NREL/PVDegradationTools/issues/%s", "issue %s"),
+    # "pull": ("https://github.com/NREL/PVDegradationTools/pull/%s", "pull %s"),
     "ghuser": ("https://github.com/%s", "ghuser %s"),
 }
 
@@ -116,7 +116,6 @@ html_theme_options = {
         "API reference": "api",
         "What's New": "whatsnew/index",
     },
-    "github_url": "https://github.com/NREL/PVDegradationTools",
     # "favicons": [
     #     {"rel": "icon", "sizes": "16x16", "href": "favicon-16x16.png"}, ### CHECK THIS IMAGE ###
     #     {"rel": "icon", "sizes": "32x32", "href": "favicon-32x32.png"}, ### CHECK THIS IMAGE ###
@@ -140,7 +139,7 @@ html_theme_options = {
     # },
     # ],
     # "use_edit_page_button": True, 
-    "github_url": "https://github.com/NREL/PVDegradationTools",
+    "github_url": "https://github.com/NREL/GeoGridFusion",
     "show_toc_level": 1,
     "footer_start": [],
     "footer_end": ["copyright", "sphinx-version", "sidebar-ethical-ads"],
@@ -149,12 +148,12 @@ html_theme_options = {
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = "./_static/logo-vectors/PVdeg-Logo-Horiz-Color.svg"  # logo should work at this path
+#html_logo = "./_static/logo-vectors/PVdeg-Logo-Horiz-Color.svg"  # logo should work at this path
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = "./_static/pvdeg.ico"
+#html_favicon = "./_static/pvdeg.ico"
 
 html_static_path = ["_static"]
 
@@ -162,7 +161,7 @@ html_static_path = ["_static"]
 html_show_copyright = True
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "pvdeg_pythondoc"
+htmlhelp_basename = "geogridfusion_pythondoc"
 
 
 # custom CSS workarounds
