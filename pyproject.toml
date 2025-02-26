@@ -27,6 +27,7 @@ dependencies = [
     "scipy",
     "zarr",
     "h5py",
+    "pyproj",
 ]
 dynamic = ["version"]
 
