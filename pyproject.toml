@@ -28,6 +28,9 @@ dependencies = [
     "zarr",
     "h5py",
     "pyproj",
+    "IPython",
+    "pyyaml",
+    
 ]
 dynamic = ["version"]
 
