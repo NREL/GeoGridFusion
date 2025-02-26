@@ -15,13 +15,30 @@ class NestedNamespace:
     def __repr__(self):
         return f"{self.__class__.__name__}({self.__dict__})"
 
-# Load the YAML file
-def load_user_paths(yaml_file):
-    with open(yaml_file, 'r') as file:
-        data = yaml.safe_load(file)
+def ensure_yaml_exists(yaml_file):
+    """Ensures the YAML file exists. Creates an empty one if not present."""
+    os.makedirs(os.path.dirname(yaml_file), exist_ok=True)
+    if not os.path.exists(yaml_file):
+        with open(yaml_file, "w") as file:
+            file.write("")  # Create an empty YAML file
 
-    if data is not None:
-        return NestedNamespace(**data)
+# Load the YAML file
+# def load_user_paths(yaml_file):
+#     with open(yaml_file, 'r') as file:
+#         data = yaml.safe_load(file)
+
+#     if data is not None:
+#         return NestedNamespace(**data)
+
+def load_user_paths(yaml_file):
+    """Loads the YAML file into a NestedNamespace object."""
+    ensure_yaml_exists(yaml_file)  # Ensure the file exists before loading
+
+    with open(yaml_file, 'r') as file:
+        data = yaml.safe_load(file) or {}  # Handle empty files gracefully
+
+    return NestedNamespace(**data)
+
 
 def load_store_configs():
     # LOAD YAML STORE CONFIGS, set as module attributes
@@ -36,6 +53,7 @@ def load_store_configs():
     module = sys.modules['geogridfusion']
     for key, value in user_paths_data.__dict__.items():
         setattr(module, key, value)
+
 
 # move out of this
 TREE_NAMES = [
