@@ -8,19 +8,26 @@ import xarray as xr
 from psycopg2.extensions import connection
 from geogridfusion import DATA_DIR
 from geogridfusion import utilities
+import json
 
-def store_single(conn: connection, weather_df: pd.DataFrame, meta: dict, tmy: bool, source_res = None, coerce_year: int=1979) -> None:
+def store_single(conn: connection, weather_df: pd.DataFrame, meta: dict, tmy: bool, source_name: str = None, coerce_year: int=1979) -> None:
 
     # we may want to provide some more parsing/safety for these metadata fields, like tz_offset
+    # see which of these we need
     latitude = meta.get("latitude")
     longitude = meta.get("longitude")
-    source_name = meta.get("Source")
+    source_name = meta.get("Source") or source_name
     altitude = meta.get("altitude")
-    wind_height = meta.get("wind_height")
-    tz_offset = meta.get("tz")
+
+    # we are going to get rid of these
+    # wind_height = meta.get("wind_height")
+    # station = meta.get("station")
 
     if latitude is None or longitude is None:
         raise ValueError("Missing required latitude or longitude in metadata.")
+
+
+    tz_offset = meta.get("tz")
 
     if tmy and (tz_offset is None or tz_offset == "+0"):
         print("coercing tmy data to year 1979")
@@ -47,28 +54,27 @@ def store_single(conn: connection, weather_df: pd.DataFrame, meta: dict, tmy: bo
         cur.execute("UPDATE files SET file_path = %s WHERE id = %s", (str(fp), file_id))
 
         cur.execute("""
-            INSERT INTO meta (id, length, source_name, source_res, tmy, tz_offset, altitude, wind_height)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO meta (id, length, source_name, tmy, altitude, serial)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """, (
             file_id, 
             len(weather_df), 
             source_name, 
-            source_res, 
             tmy, 
-            tz_offset, 
             altitude, 
-            wind_height
+            json.dumps(meta)
         ))
 
         conn.commit()
 
 # we do not want this available at the top level
-def _meta_dict_from_id(conn: connection, id: int) -> dict:
+# TODO: automatically drop null attributes in the dictionary
+def _meta_dict_from_id(conn: connection, id: int, drop_null_attributes:bool=True) -> dict:
 
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT length, source_name, source_res, tmy, tz_offset 
+        SELECT length, source_name, tmy, altitude, serial
         FROM meta
         WHERE id = %s
     """, (id,))
@@ -79,15 +85,10 @@ def _meta_dict_from_id(conn: connection, id: int) -> dict:
     if res is None:
         return ValueError(f"no metadata found for id: {id}")
 
-    length, source_name, source_res, tmy, tz_offset = res
+    length, source_name, tmy, altitude, serial = res
 
-    return {
-        "length": length,
-        "source_name": source_name,
-        "source_res": source_res,
-        "tmy": tmy,
-        "tz_offset": tz_offset
-    }
+    return serial
+
 
 def sources(conn: connection) -> dict:
     """

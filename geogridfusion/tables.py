@@ -33,19 +33,23 @@ def initialize_tables(conn: connection) -> None:
                 id INTEGER PRIMARY KEY REFERENCES files(id),
                 length      INT,
                 source_name TEXT,
-                source_res  TEXT,
                 tmy         BOOL,
-                tz_offset   TEXT,
                 altitude    FLOAT,
-                wind_height FLOAT
+                serial      JSON
+
+                -- source_res  TEXT,
+                -- tz_offset   TEXT,
+                -- wind_height FLOAT,
+                -- station     TEXT
+
                 -- OTHER
             );
             """
         )
 
     cur.execute("CREATE INDEX IF NOT EXISTS idx_source_name ON meta (source_name);")
-    #cur.execute("CREATE INDEX IF NOT EXISTS idx_source_res ON meta (source_res);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_tmy ON meta (tmy);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_tmy ON meta (altitude);")
 
     conn.commit()
     cur.close()
