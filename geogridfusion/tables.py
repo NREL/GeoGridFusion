@@ -12,8 +12,8 @@ def initialize_tables(conn: connection) -> None:
             latitude DOUBLE PRECISION NOT NULL, 
             longitude DOUBLE PRECISION NOT NULL, 
             file_path TEXT, -- nullable so we can determine filepath after insert based on id
-            coords geometry(Point, 4326) GENERATED ALWAYS AS (
-                ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)
+            coords geography(Point, 4326) GENERATED ALWAYS AS (
+                ST_MakePoint(longitude, latitude)::geography
             ) STORED,
             size BIGINT NOT NULL,
             partial_hash TEXT NOT NULL,
@@ -36,11 +36,6 @@ def initialize_tables(conn: connection) -> None:
                 tmy         BOOL,
                 altitude    FLOAT,
                 serial      JSON
-
-                -- source_res  TEXT,
-                -- tz_offset   TEXT,
-                -- wind_height FLOAT,
-                -- station     TEXT
 
                 -- OTHER
             );

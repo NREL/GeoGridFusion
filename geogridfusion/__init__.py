@@ -5,7 +5,12 @@ import logging
 from .config import *
 
 # top level namespace utilities
-from .core import store_single, load_single, sources
+from .core import (
+    store_single, 
+    load_single, 
+    sources, 
+    load_many
+)
 
 from .startup import start
 from .initdb import initdb
