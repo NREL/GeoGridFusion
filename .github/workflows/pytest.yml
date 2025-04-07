@@ -63,6 +63,11 @@ jobs:
           echo "Trying ping:"
           ping -c 2 postgres || echo "Ping failed"
 
+      - name: Show container names and networking info
+        run: |
+          docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}"
+
+
       - name: Checkout GeoGridFusion Repo Code
         uses: actions/checkout@v4
 
