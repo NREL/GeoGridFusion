@@ -19,6 +19,7 @@ jobs:
     services:
       postgres:
         image: postgis/postgis:17-3.5  # docker image
+        # image: postgis/postgis:14-3.5  # docker image
         env:
           POSTGRES_USER: postgres
           POSTGRES_HOST_AUTH_METHOD: trust
@@ -31,12 +32,10 @@ jobs:
         ports:
           - 5432:5432
 
-      
     env:
       PGHOST: postgres
       PGPORT: 5432
       PGUSER: postgres
-      PGPASSWORD: ""
       PGDATABASE: postgres
 
     steps:
@@ -47,6 +46,15 @@ jobs:
             echo "Waiting for Postgres to be ready..."
             sleep 3
           done
+
+      - name: Show Postgres logs (if startup failed)
+        if: ${{ always() }}
+        run: |
+          echo "Docker containers:"
+          docker ps -a
+          echo "Postgres logs:"
+          docker logs $(docker ps -q --filter "ancestor=postgis/postgis:17-3.5")
+
 
       - name: Checkout GeoGridFusion Repo Code
         uses: actions/checkout@v4

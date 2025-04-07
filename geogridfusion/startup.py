@@ -22,7 +22,10 @@ def wait_for_postgres(timeout=30, host="localhost"):
     while time.time() - start_time < timeout:
         try:
             conn = psycopg2.connect(
-                dbname="postgres", user="postgres", host=host, port="5432"
+                dbname="postgres", 
+                user="postgres", 
+                host=host, 
+                port="5432"
             )
             print(f"PostgreSQL connection established after {time.time() - start_time:.2f} seconds.")
             return conn
