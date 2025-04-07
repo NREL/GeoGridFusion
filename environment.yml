@@ -1,8 +1,0 @@
-name: test-env
-channels:
-  - defaults
-  - conda-forge
-dependencies:
-  - postgresql
-  - postgis
-  - pytest

@@ -12,6 +12,15 @@ import geogridfusion
 
 #     geogridfusion.initdb()
 
+def test_version():
+    conn = geogridfusion.start()
+
+    with conn.cursor() as cur:
+        cur.execute("SELECT version()")
+        print("PostgreSQL version:", cur.fetchone()[0])
+        cur.execute("SELECT PostGIS_Version()")
+        print("PostGIS version:", cur.fetchone()[0])
+
 def test_initialize_tables():
     """
     this auto-initalizes tables for us 
@@ -45,6 +54,6 @@ def test_sources():
     conn = geogridfusion.start()
 
     # nothing stored yet
-    result = geogridfusion.sources()
+    result = geogridfusion.sources(conn=conn)
 
     assert result == {}

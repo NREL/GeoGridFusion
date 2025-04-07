@@ -6,34 +6,42 @@ on:
     - main
     - development
   pull_request:
-
+  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5  # docker image
 
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
+      - name: Wait for Postgres to be ready and run initdb
+        run: |
+          # Wait until the service is ready
+          for i in {1..10}; do
+            pg_isready -h localhost -p 5432 -U test && break
+            echo "Waiting for postgres..."
+            sleep 2
+          done
+
       - uses: actions/checkout@v4
 
-      - name: Set up Conda with matrix Python version
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          auto-activate-base: false
-          environment-file: environment.yml
-          activate-environment: test-env
 
-      - name: Install package with test dependencies
-        shell: bash -l {0}
+      - name: Install GeoGridFusion
         run: |
-          pip install --upgrade pip
+          python -m pip install --progress-bar off --upgrade pip
           pip install .[test]
 
-      - name: Run tests
-        shell: bash -l {0}
+      - name: Test with pytest 
         run: |
-          pytest --cov=./ --cov-report=xml
+          python -m pytest --cov=./ --cov-report=xml
