@@ -74,6 +74,24 @@ def start():
 
     return conn
 
+def start_test():
+
+    conn = psycopg2.connect(
+        host="postgres",
+        dbname="postgres",
+        user="postgres",
+        password="",
+        port=5432
+    )
+
+    with conn.cursor() as cur:
+        cur.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+        conn.commit()
+
+    geogridfusion.initialize_tables(conn=conn)
+
+    return conn
+
 
 def start_posix():
     print("Starting Postgres subprocess...")

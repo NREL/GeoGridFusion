@@ -12,14 +12,22 @@ import geogridfusion
 
 #     geogridfusion.initdb()
 
+
+### if we are local we want to use the default start, other wise we want to monkeypatch test_start()
+
 def test_version():
     conn = geogridfusion.start()
 
     with conn.cursor() as cur:
         cur.execute("SELECT version()")
         print("PostgreSQL version:", cur.fetchone()[0])
-        # cur.execute("SELECT PostGIS_Version()")
-        # print("PostGIS version:", cur.fetchone()[0])
+
+        cur.execute("select extversion from pg_extension where extname = 'postgis';")
+        version = cur.fetchone()[0]
+        print("Postgis version:", version)
+
+        assert version is not None
+
 
 def test_initialize_tables():
     """
