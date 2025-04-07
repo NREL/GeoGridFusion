@@ -1,0 +1,5 @@
+.vscode
+
+geogridfusion/__pycache__/*
+
+geogridfusion.egg-info

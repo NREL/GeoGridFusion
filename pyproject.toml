@@ -31,7 +31,7 @@ dependencies = [
     "IPython",
     "pyyaml",
     "psycopg2",
-    
+    "importlib_metadata"
 ]
 dynamic = ["version"]
 

@@ -4,7 +4,7 @@ import xarray as xr
 import hashlib
 from psycopg2.extensions import cursor, connection
 import io
-import queries
+from geogridfusion import queries
 
 def hash_dataframe(df: pd.DataFrame, byte_count=None) -> tuple[str, str, int, bytes]:
     """

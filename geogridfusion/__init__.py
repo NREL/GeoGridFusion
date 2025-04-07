@@ -17,7 +17,7 @@ from .initdb import initdb
 from .tables import initialize_tables
 
 # 2nd tier namespace utilties
-
+from . import queries
 
 ########################
 
