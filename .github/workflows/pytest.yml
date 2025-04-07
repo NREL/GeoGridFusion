@@ -30,6 +30,8 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+
+      
     env:
       PGHOST: postgres
       PGPORT: 5432
@@ -38,6 +40,14 @@ jobs:
       PGDATABASE: postgres
 
     steps:
+      - name: Wait for Postgres to be ready
+        run: |
+          for i in {1..10}; do
+            pg_isready -h postgres -p 5432 && echo "Postgres is ready" && break
+            echo "Waiting for Postgres to be ready..."
+            sleep 3
+          done
+
       - name: Checkout GeoGridFusion Repo Code
         uses: actions/checkout@v4
 
