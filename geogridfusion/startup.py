@@ -7,7 +7,7 @@ from pathlib import Path
 
 import geogridfusion
 
-def wait_for_postgres(timeout=30, host="localhost"):
+def wait_for_postgres(timeout=30, host="localhost", password:str=None):
 
     # errors that we may encounter in the startup process
     RECOVERABLE_ERRORS = [
@@ -18,6 +18,10 @@ def wait_for_postgres(timeout=30, host="localhost"):
         "Connection refused"
     ]
 
+    extra = {}
+    if password is not None:
+        extra = {"password":password}
+
     start_time = time.time()
     while time.time() - start_time < timeout:
         try:
@@ -25,7 +29,8 @@ def wait_for_postgres(timeout=30, host="localhost"):
                 dbname="postgres", 
                 user="postgres", 
                 host=host, 
-                port="5432"
+                port="5432",
+                **extra
             )
             print(f"PostgreSQL connection established after {time.time() - start_time:.2f} seconds.")
             return conn
@@ -78,8 +83,10 @@ def start():
     return conn
 
 def _start_test():
+    for i in range(5):
+        print("IN START_TEST FUNCTION")
 
-    conn = wait_for_postgres(host="postgres")
+    conn = wait_for_postgres(host="postgres", password="postgres")
 
     with conn.cursor() as cur:
         cur.execute("CREATE EXTENSION IF NOT EXISTS postgis;")

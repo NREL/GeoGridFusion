@@ -18,11 +18,12 @@ jobs:
 
     services:
       postgres:
-        image: postgis/postgis:17-3.5  # docker image
-        # image: postgis/postgis:14-3.5  # docker image
+        #image: postgis/postgis:17-3.5  # docker image
+        image: postgis/postgis:14-3.5  # docker image
         env:
+          POSTGRES_DB: postgres
           POSTGRES_USER: postgres
-          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_PASSWORD: postgres
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
@@ -35,6 +36,7 @@ jobs:
     env:
       PGHOST: postgres
       PGPORT: 5432
+      PGPASSWORD: postgres
       PGUSER: postgres
       PGDATABASE: postgres
 
