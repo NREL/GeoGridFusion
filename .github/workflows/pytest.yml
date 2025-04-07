@@ -43,7 +43,7 @@ jobs:
       - name: Wait for Postgres to be ready
         run: |
           for i in {1..10}; do
-            pg_isready -h postgres -p 5432 && echo "Postgres is ready" && break
+            pg_isready -h localhost:5432 -p 5432 && echo "Postgres is ready" && break
             echo "Waiting for Postgres to be ready..."
             sleep 3
           done
@@ -58,21 +58,13 @@ jobs:
       - name: Debug service DNS and network
         run: |
           echo "Testing DNS resolution:"
-          getent hosts postgres || echo "DNS not ready"
+          getent hosts localhost:5432 || echo "DNS not ready"
           echo "Trying ping:"
-          ping -c 2 postgres || echo "Ping failed"
+          ping -c 2 localhost:5432 || echo "Ping failed"
 
       - name: Show container names and networking info
         run: |
           docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}"
-
-      # - name: Test DNS and connection manually
-      #   run: |
-      #     getent hosts postgres
-      #     pg_isready -h postgres -p 5432
-      #     psql -h postgres -U postgres -d postgres -c "SELECT version();"
-      #   env:
-      #     PGPASSWORD: postgres
 
       - name: Checkout GeoGridFusion Repo Code
         uses: actions/checkout@v4

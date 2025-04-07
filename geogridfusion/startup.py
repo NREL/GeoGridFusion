@@ -86,7 +86,7 @@ def _start_test():
     for i in range(5):
         print("IN START_TEST FUNCTION")
 
-    conn = wait_for_postgres(host="localhost:5432", password="postgres")
+    conn = wait_for_postgres(host="localhost", password="postgres")
 
     with conn.cursor() as cur:
         cur.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
