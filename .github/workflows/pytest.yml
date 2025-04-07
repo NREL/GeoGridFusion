@@ -49,14 +49,19 @@ jobs:
             sleep 3
           done
 
-      - name: Show Postgres logs (if startup failed)
-        if: ${{ always() }}
+      - name: Show Postgres logs
         run: |
           echo "Docker containers:"
           docker ps -a
           echo "Postgres logs:"
-          docker logs $(docker ps -q --filter "ancestor=postgis/postgis:17-3.5")
+          docker logs $(docker ps -q --filter "publish=5432")
 
+      - name: Debug service DNS and network
+        run: |
+          echo "Testing DNS resolution:"
+          getent hosts postgres || echo "DNS not ready"
+          echo "Trying ping:"
+          ping -c 2 postgres || echo "Ping failed"
 
       - name: Checkout GeoGridFusion Repo Code
         uses: actions/checkout@v4
