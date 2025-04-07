@@ -1,19 +1,6 @@
 import pytest
 import geogridfusion
 
-# @pytest.fixture(scope="module")
-# def connect():
-#     conn = geogridfusion.start()
-#     yield conn
-#     conn.close()
-
-# def test_uninitialized_init():
-#     """we can capture output"""
-
-#     geogridfusion.initdb()
-
-
-### if we are local we want to use the default start, other wise we want to monkeypatch test_start()
 
 def test_version():
     conn = geogridfusion.start()

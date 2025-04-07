@@ -74,13 +74,12 @@ def start():
 
     return conn
 
-def start_test():
+def _start_test():
 
     conn = psycopg2.connect(
         host="postgres",
         dbname="postgres",
         user="postgres",
-        password="",
         port=5432
     )
 
