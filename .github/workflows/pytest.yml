@@ -18,13 +18,12 @@ jobs:
 
     services:
       postgres:
-        #image: postgis/postgis:17-3.5  # docker image
         image: postgis/postgis:14-3.5  # docker image
         env:
           POSTGRES_DB: postgres
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-        # Set health checks to wait until postgres has started
+        # set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -67,6 +66,13 @@ jobs:
         run: |
           docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}"
 
+      - name: Test DNS and connection manually
+        run: |
+          getent hosts postgres
+          pg_isready -h postgres -p 5432
+          psql -h postgres -U postgres -d postgres -c "SELECT version();"
+        env:
+          PGPASSWORD: postgres
 
       - name: Checkout GeoGridFusion Repo Code
         uses: actions/checkout@v4
