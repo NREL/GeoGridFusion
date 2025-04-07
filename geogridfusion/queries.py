@@ -3,6 +3,21 @@ module containing frequently used sql query wrappers for geogridfusion
 """
 from psycopg2 import sql
 
+def count_by_source(conn) -> dict:
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT source_name, COUNT(*) 
+        FROM meta
+        GROUP BY source_name
+        ORDER BY COUNT(*) DESC;
+    """)
+
+    results = cur.fetchall()
+    cur.close()
+
+    return results
+
 def rows_by_id(conn, ids: list[int]) -> list[tuple]:
 
     with conn.cursor() as cur:

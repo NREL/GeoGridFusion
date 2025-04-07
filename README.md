@@ -43,9 +43,66 @@ Documentation is available in [ReadTheDocs](https://GeoGridFusion.readthedocs.io
 
 # Installation
 
-GeoGridFusion utilizes PostgreSQL to store geospatial data. If you do not already have postgres, you will need to install it. If you do not have admin privileges you will have to follow the steps below, rather than using the installer.
 
-## Installing PostgreSQL without Admin
+GeoGridFusion utilizes PostgreSQL to store geospatial data. If you do not already have postgres, you will need to install it. If you do not have admin privileges you will have to follow the steps below, rather than using the installer. 
+
+If we try to install GeoGridFusion using pip before installing PostGreSQL then we will get the following error. Use the directions below to install PostGreSQL.
+
+    (conda-env) tobin@desktop:~/dev/nrel/GeoGridFusion$ pip install psycopg2
+      Collecting psycopg2
+      Using cached psycopg2-2.9.10.tar.gz (385 kB)
+      Preparing metadata (setup.py) ... error
+      error: subprocess-exited-with-error
+  
+      × python setup.py egg_info did not run successfully.
+      │ exit code: 1
+      ╰─> [23 lines of output]
+          running egg_info
+          creating /tmp/pip-pip-egg-info-ipgqjtqa/psycopg2.egg-info
+          writing /tmp/pip-pip-egg-info-ipgqjtqa/psycopg2.egg-info/PKG-INFO
+          writing dependency_links to /tmp/pip-pip-egg-info-ipgqjtqa/psycopg2.egg-info/dependency_links.txt
+          writing top-level names to /tmp/pip-pip-egg-info-ipgqjtqa/psycopg2.egg-info/top_level.txt
+          writing manifest file '/tmp/pip-pip-egg-info-ipgqjtqa/psycopg2.egg-info/SOURCES.txt'
+          
+          Error: pg_config executable not found.
+          
+          pg_config is required to build psycopg2 from source.  Please add the directory
+          containing pg_config to the $PATH or specify the full executable path with the
+          option:
+          
+              python setup.py build_ext --pg-config /path/to/pg_config build ...
+          
+          or with the pg_config option in 'setup.cfg'.
+          
+          If you prefer to avoid building psycopg2 from source, please install the PyPI
+          'psycopg2-binary' package instead.
+          
+          For further information please check the 'doc/src/install.rst' file (also at
+          <https://www.psycopg.org/docs/install.html>).
+          
+          [end of output]
+      
+      note: This error originates from a subprocess, and is likely not a problem with pip.
+    error: metadata-generation-failed
+
+    × Encountered error while generating package metadata.
+    ╰─> See above for output.
+
+
+## Ubuntu: Install PostgreSQL with Anaconda/Miniconda
+
+Assuming Anaconda/Miniconda is already available on your system, we can use it to download PostgreSQL 17.4, and PostGIS by running:
+
+Create a new conda environment using python 3.12
+
+    $ conda create -n geogridfusion-env python=3.12 postgresql jupyter ipykernel
+    $ conda install conda-forge::postgis
+
+We can add an IPython kernel which we can use to run jupyter notebooks.
+
+    $ pythom -m ipykernel install --user --name=nrel-ggf
+
+## Windows: Installing PostgreSQL without Admin
 
 ### Download binaries  
 [Source](https://www.enterprisedb.com/download-postgresql-binaries)
@@ -131,6 +188,43 @@ The final step in setting up the database is creating the tables that will store
     conn = geogridfusion.start()
     geogridfusion.initialize_tables(conn=conn)
 
+# First Time Using
+
+On your first run of GeoGridFusion you will see an output that looks like this. This is normal and displays the configurations GeoGridFusion is using.
+
+    >>> import geogridfusion
+    >>> conn = geogridfusion.start()
+
+    The files belonging to this database system will be owned by user "tobin".
+    This user must also own the server process.
+
+    The database cluster will be initialized with locale "en_US.UTF-8".
+    The default database encoding has accordingly been set to "UTF8".
+    The default text search configuration will be set to "english".
+
+    Data page checksums are disabled.
+
+    creating directory /home/tobin/.config/pgsql/geogridfusion-data ... ok
+    creating subdirectories ... ok
+    selecting dynamic shared memory implementation ... posix
+    selecting default max_connections ... 100
+    selecting default shared_buffers ... 128MB
+    selecting default time zone ... America/Denver
+    creating configuration files ... ok
+    running bootstrap script ... ok
+    performing post-bootstrap initialization ... ok
+    syncing data to disk ... ok
+
+
+    Success. You can now start the database server using:
+
+        pg_ctl -D /home/tobin/.config/pgsql/geogridfusion-data -l logfile start
+
+    Successfully initialized PostgreSQL cluster at /home/tobin/.config/pgsql/geogridfusion-data
+    initdb: warning: enabling "trust" authentication for local connections
+    initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+
+
 License
 =======
 
@@ -160,3 +254,4 @@ If you use this functions in a published work, please cite:
    Ford, Tobin. NREL GitHub 2025, Software Record SWR-25-19
 
 And/or the specific release from Zenodo:
+

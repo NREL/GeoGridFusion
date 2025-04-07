@@ -7,7 +7,7 @@ from pathlib import Path
 
 import geogridfusion
 
-def wait_for_postgres(timeout=30):
+def wait_for_postgres(timeout=30, host="localhost", password:str=None):
 
     # errors that we may encounter in the startup process
     RECOVERABLE_ERRORS = [
@@ -18,11 +18,19 @@ def wait_for_postgres(timeout=30):
         "Connection refused"
     ]
 
+    extra = {}
+    if password is not None:
+        extra = {"password":password}
+
     start_time = time.time()
     while time.time() - start_time < timeout:
         try:
             conn = psycopg2.connect(
-                dbname="postgres", user="postgres", host="localhost", port="5432"
+                dbname="postgres", 
+                user="postgres", 
+                host=host, 
+                port="5432",
+                **extra
             )
             print(f"PostgreSQL connection established after {time.time() - start_time:.2f} seconds.")
             return conn
@@ -34,20 +42,77 @@ def wait_for_postgres(timeout=30):
     raise TimeoutError("PostgreSQL did not startup in time.")
 
 def start():
-    if os.name == 'nt':
-        return start_win()
-    else:
-        raise NotImplementedError("only implemented for windows.")
-
-def start_win():
     """
-    initalize postgresql if needed, start server and watchdog and return a connection
+    Start Postgresql server, start watchdog and return a connection.
+    Initializes PostgreSQL if needed (init_db).
 
-    postgres must be installed as instructions show in documenation for reliability.
+    Postgres and PostGIS must already be installed in the environment. Follow installation instructions.
     """
 
     geogridfusion.initdb()
 
+    if os.name == 'nt':
+        start_windows()
+    elif os.name == 'posix':
+        start_posix()
+    else:
+        raise NotImplementedError(f"geogridfusion not available on os: {os.name} ")
+
+    conn = wait_for_postgres()
+    cur = conn.cursor()
+
+    cur.execute("SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis');")
+    exists = cur.fetchone()[0]
+
+    if exists:
+        print("postgis already installed")
+    else:
+        try:
+            print("attempting to create postgis extension")
+            cur.execute("CREATE EXTENSION postgis;")
+            conn.commit() 
+        except Exception as e:
+            print(f"Failed to create PostGIS extension: {e}")
+            conn.rollback()
+            raise e
+
+    cur.close()
+
+    geogridfusion.initialize_tables(conn=conn)
+
+    return conn
+
+def _start_test():
+    for i in range(5):
+        print("IN START_TEST FUNCTION")
+
+    conn = wait_for_postgres(host="localhost", password="postgres")
+
+    with conn.cursor() as cur:
+        cur.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+        conn.commit()
+
+    geogridfusion.initialize_tables(conn=conn)
+
+    return conn
+
+
+def start_posix():
+    print("Starting Postgres subprocess...")
+
+    subprocess.Popen([
+        sys.executable,
+        str(geogridfusion.WATCHDOG_PATH),
+        str(os.getpid()),
+        "postgres",
+        "-D", geogridfusion.DATA_DIR
+        ],
+        start_new_session=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+def start_windows():
     print("Starting Postgres subprocess...")
 
     # we be using pg_ctl to do this instead
@@ -59,25 +124,53 @@ def start_win():
         "postgres", 
         "-D", 
         geogridfusion.DATA_DIR
-    ], 
-    creationflags=DETACHED_PROCESS, # windows quirk
-    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL # windows quirk
+        ], 
+        creationflags=DETACHED_PROCESS, # windows quirk
+        stdout=subprocess.DEVNULL, 
+        stderr=subprocess.DEVNULL
     )
 
-    conn = wait_for_postgres()
-    cur = conn.cursor()
 
-    cur.execute("SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis');")
-    exists = cur.fetchone()[0]
 
-    if exists:
-        print("postgis already installed")
-    else:
-        print("attempting to create postgis extension")
-        cur.execute("CREATE EXTENSION postgis;")
-        conn.commit() 
+# def start_win():
+#     """
+#     initalize postgresql if needed, start server and watchdog and return a connection
 
-    cur.close()
+#     postgres must be installed as instructions show in documenation for reliability.
+#     """
 
-    return conn
+#     geogridfusion.initdb()
+
+#     print("Starting Postgres subprocess...")
+
+#     # we be using pg_ctl to do this instead
+#     DETACHED_PROCESS = 0x00000008 # windows quirk
+#     subprocess.Popen([
+#         sys.executable, 
+#         str(geogridfusion.WATCHDOG_PATH), 
+#         str(os.getpid()), 
+#         "postgres", 
+#         "-D", 
+#         geogridfusion.DATA_DIR
+#     ], 
+#     creationflags=DETACHED_PROCESS, # windows quirk
+#     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL # windows quirk
+#     )
+
+#     conn = wait_for_postgres()
+#     cur = conn.cursor()
+
+#     cur.execute("SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis');")
+#     exists = cur.fetchone()[0]
+
+#     if exists:
+#         print("postgis already installed")
+#     else:
+#         print("attempting to create postgis extension")
+#         cur.execute("CREATE EXTENSION postgis;")
+#         conn.commit() 
+
+#     cur.close()
+
+#     return conn
 

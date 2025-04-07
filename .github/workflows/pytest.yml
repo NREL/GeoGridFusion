@@ -1,0 +1,84 @@
+name: pytest
+
+on:
+  push:
+    branches:
+    - main
+    - development
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    services:
+      postgres:
+        image: postgis/postgis:14-3.5  # docker image
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        # set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGPASSWORD: postgres
+      PGUSER: postgres
+      PGDATABASE: postgres
+
+    steps:
+      - name: Wait for Postgres to be ready
+        run: |
+          for i in {1..10}; do
+            pg_isready -h localhost:5432 -p 5432 && echo "Postgres is ready" && break
+            echo "Waiting for Postgres to be ready..."
+            sleep 3
+          done
+
+      - name: Show Postgres logs
+        run: |
+          echo "Docker containers:"
+          docker ps -a
+          echo "Postgres logs:"
+          docker logs $(docker ps -q --filter "publish=5432")
+
+      - name: Debug service DNS and network
+        run: |
+          echo "Testing DNS resolution:"
+          getent hosts localhost:5432 || echo "DNS not ready"
+          echo "Trying ping:"
+          ping -c 2 localhost:5432 || echo "Ping failed"
+
+      - name: Show container names and networking info
+        run: |
+          docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}"
+
+      - name: Checkout GeoGridFusion Repo Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install GeoGridFusion
+        run: |
+          python -m pip install --progress-bar off --upgrade pip
+          pip install .[test]
+
+      - name: Test with pytest 
+        run: |
+          python -m pytest --cov=./ --cov-report=xml

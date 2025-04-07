@@ -6,10 +6,11 @@ import os
 import pandas as pd
 import xarray as xr
 from psycopg2.extensions import connection
-from geogridfusion import DATA_DIR
-from geogridfusion import utilities
-
-import queries # fix namespace (dont want to expose with geogridfusion)
+from geogridfusion import (
+    DATA_DIR,
+    utilities,
+    queries,
+)
 
 import json
 
@@ -95,17 +96,7 @@ def sources(conn: connection) -> dict:
     """
     Returns a dictionary mapping each source_name to the number of files associated with it.
     """
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT source_name, COUNT(*) 
-        FROM meta
-        GROUP BY source_name
-        ORDER BY COUNT(*) DESC;
-    """)
-
-    results = cur.fetchall()
-    cur.close()
+    results = queries.count_by_source(conn=conn)
 
     return {source: count for source, count in results}
 
