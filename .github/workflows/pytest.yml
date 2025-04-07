@@ -33,7 +33,7 @@ jobs:
           - 5432:5432
 
     env:
-      PGHOST: postgres
+      PGHOST: localhost
       PGPORT: 5432
       PGPASSWORD: postgres
       PGUSER: postgres
@@ -66,13 +66,13 @@ jobs:
         run: |
           docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}"
 
-      - name: Test DNS and connection manually
-        run: |
-          getent hosts postgres
-          pg_isready -h postgres -p 5432
-          psql -h postgres -U postgres -d postgres -c "SELECT version();"
-        env:
-          PGPASSWORD: postgres
+      # - name: Test DNS and connection manually
+      #   run: |
+      #     getent hosts postgres
+      #     pg_isready -h postgres -p 5432
+      #     psql -h postgres -U postgres -d postgres -c "SELECT version();"
+      #   env:
+      #     PGPASSWORD: postgres
 
       - name: Checkout GeoGridFusion Repo Code
         uses: actions/checkout@v4
