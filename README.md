@@ -95,7 +95,7 @@ Assuming Anaconda/Miniconda is already available on your system, we can use it t
 
 Create a new conda environment using python 3.12
 
-    $ conda create -n geogridfusion-env python=3.12 postgres jupyter ipykernel
+    $ conda create -n geogridfusion-env python=3.12 postgresql jupyter ipykernel
     $ conda install conda-forge::postgis
 
 We can add an IPython kernel which we can use to run jupyter notebooks.
