@@ -18,8 +18,8 @@ def test_version():
     with conn.cursor() as cur:
         cur.execute("SELECT version()")
         print("PostgreSQL version:", cur.fetchone()[0])
-        cur.execute("SELECT PostGIS_Version()")
-        print("PostGIS version:", cur.fetchone()[0])
+        # cur.execute("SELECT PostGIS_Version()")
+        # print("PostGIS version:", cur.fetchone()[0])
 
 def test_initialize_tables():
     """
