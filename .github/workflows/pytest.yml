@@ -40,14 +40,6 @@ jobs:
       PGDATABASE: postgres
 
     steps:
-      - name: Wait for Postgres to be ready
-        run: |
-          for i in {1..10}; do
-            pg_isready -h localhost:5432 -p 5432 && echo "Postgres is ready" && break
-            echo "Waiting for Postgres to be ready..."
-            sleep 3
-          done
-
       - name: Show Postgres logs
         run: |
           echo "Docker containers:"
@@ -55,12 +47,9 @@ jobs:
           echo "Postgres logs:"
           docker logs $(docker ps -q --filter "publish=5432")
 
-      - name: Debug service DNS and network
+      - name: Postgres Ready check
         run: |
-          echo "Testing DNS resolution:"
-          getent hosts localhost:5432 || echo "DNS not ready"
-          echo "Trying ping:"
-          ping -c 2 localhost:5432 || echo "Ping failed"
+          pg_isready -h "${PGHOST}" -p "${PGPORT}"
 
       - name: Show container names and networking info
         run: |

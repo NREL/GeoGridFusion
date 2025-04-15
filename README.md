@@ -2,7 +2,7 @@
 
 This repo contains utilities to allow for the storage of user downloaded geospatial weather data by providing a local datastore for storage and spatial queries, supporting large-scale analyses without the need for high-performance computing (HPC) resources.
 
-<!-- <table>
+<table>
 
 <tr>
   <td>License</td>
@@ -10,18 +10,22 @@ This repo contains utilities to allow for the storage of user downloaded geospat
     <a href="https://github.com/NREL/GeoGridFusion/blob/master/LICENSE.md">
     <img src="https://img.shields.io/pypi/l/pvlib.svg" alt="license" />
     </a>
-</td>
+  </td>
 </tr>
 <tr>
   <td>Documentation</td>
   <td>
 	<a href='https://geogridfusion.readthedocs.io'>
-	    <img src='https://readthedocs.org/projects/pvdegradationtools/badge/?version=stable' alt='Documentation Status' />
+	    <img src='https://readthedocs.org/projects/geogridfusion/badge/?version=stable' alt='Documentation Status' />
 	</a>
   </td>
 </tr>
 
-<tr>
+</table>
+
+<!-- </table>
+
+ <tr>
   <td>Build status</td>
   <td>
    <a href="https://github.com/NREL/GeoGridFusion/actions/workflows/pytest.yml?query=branch%3Amain">
@@ -29,16 +33,30 @@ This repo contains utilities to allow for the storage of user downloaded geospat
    </a>
    <!-- <a href="https://codecov.io/gh/NREL/PVDegradationTools" >
    <img src="https://codecov.io/gh/NREL/PVDegradationTools/graph/badge.svg?token=4I24S8BTG7"/>
-   </a> -->
+   </a>
   </td>
 </tr> 
-</table>
+
+</table> -->
 
 
 Documentation
 =============
 
-Documentation is available in [ReadTheDocs](https://GeoGridFusion.readthedocs.io) where you can find more details on the API functions.
+Documentation is available at [ReadTheDocs](https://GeoGridFusion.readthedocs.io) where you can find more details on the API functions.
+
+<table>
+<tr>
+  <td>Documentation</td>
+  <td>
+	<a href='https://geogridfusion.readthedocs.io'>
+	    <img src='https://readthedocs.org/projects/geogridfusion/badge/?version=stable' alt='Documentation Status' />
+	</a>
+  </td>
+</tr>
+</table>
+
+
 
 
 # Installation
@@ -228,8 +246,17 @@ On your first run of GeoGridFusion you will see an output that looks like this. 
 License
 =======
 
-<!-- [BSD 3-clause](https://github.com/NREL/PVDegradationTools/blob/main/LICENSE.md) -->
-Not available yet
+<table>
+
+<tr>
+  <td>License</td>
+  <td>
+    <a href="https://github.com/NREL/GeoGridFusion/blob/master/LICENSE.md">
+    <img src="https://img.shields.io/pypi/l/pvlib.svg" alt="license" />
+    </a>
+</td>
+
+</table>
 
 
 Contributing
