@@ -47,7 +47,7 @@ def store_single(conn: connection, weather_df: pd.DataFrame, meta: dict, tmy: bo
         cur.execute("""
             INSERT INTO files (latitude, longitude, size, partial_hash, full_hash)
             VALUES (%s, %s, %s, %s, %s) RETURNING id;
-        """, (latitude, longitude, size, partial_hash, full_hash))
+        """, (float(latitude), float(longitude), size, partial_hash, full_hash))
 
         file_id = cur.fetchone()[0]
         fp = DATA_DIR / f"{file_id}.csv"
