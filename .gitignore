@@ -2,10 +2,11 @@
 .vscode
 
 # caches
+__pycache__/
 geogridfusion/__pycache__/
 geogridfusion.egg-info
 
-# test cache directory
+# test caches
 tests/__pycache__/
 
 # documentation build directory
