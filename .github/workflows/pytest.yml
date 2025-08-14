@@ -1,12 +1,13 @@
 name: pytest
 
 on:
-  push:
-    branches:
-    - main
-    - development
   pull_request:
   workflow_dispatch:
+  # remove test on push, can be restored later
+  # push:
+  #   branches:
+  #   - main
+  #   - development
 
 jobs:
   test:

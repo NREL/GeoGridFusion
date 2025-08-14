@@ -1,10 +1,9 @@
-from glob import glob
 import pandas as pd
-import xarray as xr
 import hashlib
-from psycopg2.extensions import cursor, connection
+from psycopg2.extensions import cursor
 import io
 from geogridfusion import queries
+
 
 def hash_dataframe(df: pd.DataFrame, byte_count=None) -> tuple[str, str, int, bytes]:
     """
@@ -15,7 +14,7 @@ def hash_dataframe(df: pd.DataFrame, byte_count=None) -> tuple[str, str, int, by
     data = buffer.getvalue()
     size = len(data)
 
-    partial_hash = hashlib.blake2b(data[:byte_count or size]).hexdigest()
+    partial_hash = hashlib.blake2b(data[: byte_count or size]).hexdigest()
     full_hash = hashlib.blake2b(data).hexdigest()
 
     return partial_hash, full_hash, size
@@ -32,12 +31,14 @@ def check_dupe(cur: cursor, partial_hash, full_hash) -> bool:
         full_hash_dupe = cur.fetchone()
         if full_hash_dupe:
             return True
-    
+
     return False
+
 
 def _parse_id_fp_serial_res(res):
     """
-    sql query result from columns file.id, file.file_path, meta.serial, parse to useful outputs
+    SQL query result from columns file.id, file.file_path, meta.serial,
+    parse to useful outputs.
     """
 
     weather_query = [(id, file_path) for id, file_path, _serial in res]
@@ -46,23 +47,41 @@ def _parse_id_fp_serial_res(res):
 
     return weather_query, meta_data, meta_index
 
-def greedy_nearest_neighbors(conn, limit: int, latitude:float, longitude: float, distance_floor: float=None, source_name:str=None):
+
+def greedy_nearest_neighbors(
+    conn,
+    limit: int,
+    latitude: float,
+    longitude: float,
+    distance_floor: float = None,
+    source_name: str = None,
+):
     """
     greedy nearest neighbors using great circle/haversine distance
     """
     if source_name is None:
-        print("using points from every source, may cause errors or undesired behavior on concatenation/merge")
+        print(
+            "using points from every source, "
+            "may cause errors or undesired behavior on concatenation/merge"
+        )
 
-    visited = set() # points we have stood on
-    explored = set() # all points we have touched but not stood on
+    visited = set()  # points we have stood on
+    explored = set()  # all points we have touched but not stood on
 
     lat, lon = latitude, longitude
 
     while limit is None or len(visited) < limit:
         # returns in order of distance from current (lat, lon)
-        step_distances = queries._distances(conn, latitude=lat, longitude=lon, visited=list(visited), source_name=source_name, distance_floor=distance_floor)
+        step_distances = queries._distances(
+            conn,
+            latitude=lat,
+            longitude=lon,
+            visited=list(visited),
+            source_name=source_name,
+            distance_floor=distance_floor,
+        )
 
-        if not step_distances: 
+        if not step_distances:
             break
 
         # add current point (where we are standing)
@@ -83,13 +102,12 @@ def greedy_nearest_neighbors(conn, limit: int, latitude:float, longitude: float,
         if not next_point:
             break
 
-        next_id, lat, lon = next_point 
+        next_id, lat, lon = next_point
         visited.add(next_id)
 
     # get id, file_path and serial from id's
     loaded_tuples = queries.rows_by_id(conn=conn, ids=list(visited))
     return loaded_tuples
-
 
 
 # def ds_from_uniform_csv(query_res: list[tuple]):
