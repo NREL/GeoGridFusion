@@ -13,13 +13,12 @@ per-file-ignores =
     # invalid escape sequence '\s'
     versioneer.py:W605
 exclude =
-    docs
-    docs/source
-    .eggs
-    .git
-    .venv
-    build
+    docs,
+    docs/source/*.py,
+    .eggs,
+    .git,
+    .venv,
+    build,
     fips.py # toremove
-
 
     tutorials_and_tools/tutorials_and_tools/*.py
