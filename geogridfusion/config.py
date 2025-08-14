@@ -10,7 +10,7 @@ WATCHDOG_PATH = GEOGRIDFUSION_DIR / "watchdog.py"
 _pg_path = which("postgres")
 POSTGRES_EXE_PATH = Path(_pg_path) if _pg_path else None  # Safely handle missing executable
 
-if POSTGRES_EXE_PATH:
+if POSTGRES_EXE_PATH is None:
     print("Postgres not found on path.")
 
 if os.name == "nt":
