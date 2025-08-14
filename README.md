@@ -158,28 +158,35 @@ If you get a which displays a version number then you have installed PostgreSQL.
     postgres (PostgreSQL) 17.4
 
 
-### Verify GeoGridFusion Startup
+### Attempt GeoGridFusion Startup
 
 Start a python environment which has geogridfusion installed. This can be a python interactive shell or jupyter notebook, etc. Run the following code block to see if we can connect to the database.
 
-    # >>> represents a line of python, other lines are output from the program
+    >>> represents a line of python, other lines are output from the program
 
     >>> import geogridfusion
     >>> conn = geogridfusion.start()
+
+    Successfully initialized PostgreSQL cluster at C:\Users\tford\AppData\Roaming\pgsql\geogridfusion-data
     Starting Postgres subprocess...
-    PostgreSQL connection established after 3.22 seconds.
+    PostgreSQL connection established after 1.64 seconds.
+    attempting to create postgis extension
+    Failed to create PostGIS extension: extension "postgis" is not available
+    DETAIL:  Could not open extension control file "C:/Users/tford/AppData/Roaming/pgsql/share/extension/postgis.control": No such file or directory.
+    HINT:  The extension must first be installed on the system where PostgreSQL is running.
 
-    >>> conn
-    <connection object at 0x0000020A67C76460; dsn: 'dbname=postgres user=postgres host=localhost port=5432', closed: 0>
+    ╰─> FeatureNotSupported: extension "postgis" is not available  
+        DETAIL:  Could not open extension control file "C:/Users/tford/AppData/Roaming/pgsql/share/extension/postgis.control": No such file or directory.  
+        HINT:  The extension must first be installed on the system where PostgreSQL is running.  
 
-If geogridfusion.start() returns a connection object then we have successfully connected to the postgres server.
 
+  **This is expected behavior**, we still need to install PostGIS using the directions below.
 
 ## Install Spatial Extensions (PostGIS)
 
 ### Download and move files
 
-Download a postgis binary bundle from [osgeo source](https://download.osgeo.org/postgis/windows/).
+Download a postgis binary bundle from [osgeo source](https://download.osgeo.org/postgis/windows/). **The version must match your postgres version**. I installed Postgres v17.4 (as shown by the ``$ postgres -V`` command from above).
 
 #### Automatic Install
 
@@ -197,51 +204,25 @@ Unzip it and copy the files as described below.
 | share\postgis\* (if it exists)     | C:\Users\YourName\PostgreSQL\share\postgis\                |
 | bin\* (optional tools)             | C:\Users\YourName\PostgreSQL\bin\                          |
 
-### Create Tables
+<!-- ### Create Tables
 
 The final step in setting up the database is creating the tables that will store our data. We can do this by running ``initialize_tables``. Now you will be ready to use geogridfusion.
 
     import geogridfusion
 
     conn = geogridfusion.start()
-    geogridfusion.initialize_tables(conn=conn)
+    geogridfusion.initialize_tables(conn=conn) -->
 
-# First Time Using
+# Using GeoGridFusion
 
-On your first run of GeoGridFusion you will see an output that looks like this. This is normal and displays the configurations GeoGridFusion is using.
+Now that PostGIS is installed we can start using ``GeoGridFusion``. As above, we can import ``GeoGridFusion`` in a Python environment and attenot to connect. You'll see an output that looks like the following on a sucessful startup. If you get an error similar to before, which says PostGIS is not installed or is missing then you have installed PostGIS incorrectly. Go back and repeat the install.
 
     >>> import geogridfusion
     >>> conn = geogridfusion.start()
 
-    The files belonging to this database system will be owned by user "tobin".
-    This user must also own the server process.
-
-    The database cluster will be initialized with locale "en_US.UTF-8".
-    The default database encoding has accordingly been set to "UTF8".
-    The default text search configuration will be set to "english".
-
-    Data page checksums are disabled.
-
-    creating directory /home/tobin/.config/pgsql/geogridfusion-data ... ok
-    creating subdirectories ... ok
-    selecting dynamic shared memory implementation ... posix
-    selecting default max_connections ... 100
-    selecting default shared_buffers ... 128MB
-    selecting default time zone ... America/Denver
-    creating configuration files ... ok
-    running bootstrap script ... ok
-    performing post-bootstrap initialization ... ok
-    syncing data to disk ... ok
-
-
-    Success. You can now start the database server using:
-
-        pg_ctl -D /home/tobin/.config/pgsql/geogridfusion-data -l logfile start
-
-    Successfully initialized PostgreSQL cluster at /home/tobin/.config/pgsql/geogridfusion-data
-    initdb: warning: enabling "trust" authentication for local connections
-    initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
-
+    Starting Postgres subprocess...
+    PostgreSQL connection established after 2.75 seconds.
+    attempting to create postgis extension
 
 License
 =======
