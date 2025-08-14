@@ -50,9 +50,13 @@ test = [
     "pytest",
     "pytest-cov",
 ]
+dev=[
+    "build",
+    "flake8",
+]
 
 all = [
-    "geogridstore[docs, test]",
+    "geogridstore[docs, test, build]",
 ]
 
 [tool.setuptools.packages.find]

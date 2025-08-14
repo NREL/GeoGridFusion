@@ -1,4 +1,3 @@
-import pytest
 import geogridfusion
 
 
@@ -18,14 +17,13 @@ def test_version():
 
 def test_initialize_tables():
     """
-    this auto-initalizes tables for us 
+    this auto-initalizes tables for us
     """
 
     # auto-initialize-tables for us
     conn = geogridfusion.start()
 
     with conn.cursor() as cur:
-
         cur.execute("""
             SELECT tablename
             FROM pg_catalog.pg_tables
@@ -39,10 +37,7 @@ def test_initialize_tables():
         for string in tup:
             flat.add(string)
 
-    assert (
-        "files" in flat and
-        "meta" in flat
-    )
+    assert "files" in flat and "meta" in flat
 
 
 def test_sources():

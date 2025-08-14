@@ -1,5 +1,4 @@
 from pathlib import Path
-from getpass import getuser
 import os
 from shutil import which
 
@@ -8,7 +7,9 @@ GEOGRIDFUSION_DIR = Path(__file__).parent
 WATCHDOG_PATH = GEOGRIDFUSION_DIR / "watchdog.py"
 
 _pg_path = which("postgres")
-POSTGRES_EXE_PATH = Path(_pg_path) if _pg_path else None  # Safely handle missing executable
+POSTGRES_EXE_PATH = (
+    Path(_pg_path) if _pg_path else None
+)  # Safely handle missing executable
 
 if POSTGRES_EXE_PATH is None:
     print("Postgres not found on path.")
