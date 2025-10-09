@@ -5,88 +5,229 @@ core set of functions and utilities for geogridfusion
 import pandas as pd
 import xarray as xr
 from psycopg2.extensions import connection
-from geogridfusion import (
-    DATA_DIR,
-    utilities,
-    queries,
-)
+from geogridfusion import DATA_DIR, utilities, queries, startup, tables
 
 import json
 
 
-def store_single(
-    conn: connection,
-    weather_df: pd.DataFrame,
-    meta: dict,
-    tmy: bool,
-    source_name: str = None,
-    coerce_year: int = 1979,
-) -> None:
-    # may want to provide some more parsing/safety for metadata fields
-    # ex) tz_offset
-    # see which of these we need
-    latitude = meta.get("latitude")
-    longitude = meta.get("longitude")
-    source_name = meta.get("Source") or meta.get("source") or source_name
-    altitude = meta.get("altitude")
+class geogridfusionStore:
+    _conn: connection
 
-    if source_name is None:
-        raise ValueError(
-            "Missing source name: source must be in 'meta' "
-            "or manually provided in 'source_name'"
+    def connect(
+        self,
+        dbname: str = "postgres",
+        user: str = "postgres",
+        host: str = "localhost",
+        port: str = "5432",
+        password: str = "password",
+    ) -> None:
+        """
+        Connect to your GeoGridFusion database.
+
+        Attempts to connect to a local database using defaults.
+        """
+        self._conn = startup.wait_for_postgres(
+            dbname=dbname, user=user, host=host, port=port, password=password
         )
 
-    if latitude is None or longitude is None:
-        raise ValueError("Missing required latitude or longitude in metadata.")
+        tables.initialize_tables(conn=self._conn)
 
-    tz_offset = meta.get("tz")
+    def store_single(
+        self,
+        weather_df: pd.DataFrame,
+        meta: dict,
+        tmy: bool,
+        source_name: str | None = None,
+        coerce_year: int = 1979,
+    ) -> None:
+        if self._conn is None:
+            raise RuntimeError("must connect to db before storing anything. use geogridfusionStore.connect()")
 
-    if tmy and (tz_offset is None or tz_offset == "+0"):
-        print("coercing tmy data to year 1979")
-        weather_df.index = weather_df.index.map(lambda ts: ts.replace(year=coerce_year))
 
-    partial_hash, full_hash, size = utilities.hash_dataframe(
-        df=weather_df, byte_count=64 * 1024
-    )
 
-    with conn.cursor() as cur:
-        if utilities.check_dupe(
-            cur=cur, partial_hash=partial_hash, full_hash=full_hash
-        ):
-            print("duplicate file detected, skipping insert")
-            print(f"metadata of duplicate file {meta}")
-            return  # no changes made
+        # may want to provide some more parsing/safety for metadata fields
+        # ex) tz_offset
+        # see which of these we need
+        latitude = meta.get("latitude")
+        longitude = meta.get("longitude")
+        source_name = meta.get("Source") or meta.get("source") or source_name
+        altitude = meta.get("altitude")
 
-        cur.execute(
-            """
-            INSERT INTO files (latitude, longitude, size, partial_hash, full_hash)
-            VALUES (%s, %s, %s, %s, %s) RETURNING id;
-        """,
-            (float(latitude), float(longitude), size, partial_hash, full_hash),
+        if source_name is None:
+            raise ValueError(
+                "Missing source name: source must be in 'meta' "
+                "or manually provided in 'source_name'"
+            )
+
+        if latitude is None or longitude is None:
+            raise ValueError("Missing required latitude or longitude in metadata.")
+
+        tz_offset = meta.get("tz")
+
+        if tmy and (tz_offset is None or tz_offset == "+0"):
+            print("coercing tmy data to year 1979")
+            weather_df.index = weather_df.index.map(
+                lambda ts: ts.replace(year=coerce_year)
+            )
+
+        partial_hash, full_hash, size = utilities.hash_dataframe(
+            df=weather_df, byte_count=64 * 1024
         )
 
-        file_id = cur.fetchone()[0]
-        fp = DATA_DIR / f"{file_id}.csv"
-        weather_df.to_csv(fp)
+        with self._conn.cursor() as cur:
+            if utilities.check_dupe(
+                cur=cur, partial_hash=partial_hash, full_hash=full_hash
+            ):
+                print("duplicate file detected, skipping insert")
+                print(f"metadata of duplicate file {meta}")
+                return  # no changes made
 
-        cur.execute("UPDATE files SET file_path = %s WHERE id = %s", (str(fp), file_id))
+            cur.execute(
+                """
+                INSERT INTO files (latitude, longitude, size, partial_hash, full_hash)
+                VALUES (%s, %s, %s, %s, %s) RETURNING id;
+            """,
+                (float(latitude), float(longitude), size, partial_hash, full_hash),
+            )
 
-        cur.execute(
-            """
-            INSERT INTO meta (id, length, source_name, tmy, altitude, serial)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """,
-            (
-                file_id,
-                len(weather_df),
-                source_name.lower(),
-                tmy,
-                altitude,
-                json.dumps(meta),
-            ),
+            file_id = cur.fetchone()[0]
+            fp = DATA_DIR / f"{file_id}.csv"
+            weather_df.to_csv(fp)
+
+            cur.execute(
+                "UPDATE files SET file_path = %s WHERE id = %s", (str(fp), file_id)
+            )
+
+            cur.execute(
+                """
+                INSERT INTO meta (id, length, source_name, tmy, altitude, serial)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+                (
+                    file_id,
+                    len(weather_df),
+                    source_name.lower(),
+                    tmy,
+                    altitude,
+                    json.dumps(meta),
+                ),
+            )
+
+            self._conn.commit()
+
+    def sources(self) -> dict:
+        """
+        Returns a dictionary mapping unqiue source_names to its number of files in storage.
+
+        ```{name: file_count}```
+        """
+        results = queries.count_by_source(conn=self._conn)
+
+        return {source: count for source, count in results}
+
+    def load_single(
+        self, latitude: float, longitude: float, source_name: str | None = None
+    ) -> tuple[pd.DataFrame, dict]:
+        """
+        Load the closest file pair.
+
+        Optionally select a source, name must match exactly.
+        """
+
+        cur = self._conn.cursor()
+
+        if source_name:
+            cur.execute(
+                """
+                SELECT f.id, f.file_path
+                FROM files f
+                JOIN meta m ON f.id = m.id
+                WHERE m.source_name = %s
+                ORDER BY coords <-> ST_SetSRID(ST_MakePoint(%s, %s), 4326)
+                LIMIT 1;
+            """,
+                (source_name.lower(), longitude, latitude),
+            )
+        else:  # any source
+            cur.execute(
+                """
+                SELECT id, file_path
+                FROM files
+                ORDER BY coords <-> ST_SetSRID(ST_MakePoint(%s, %s), 4326)
+                LIMIT 1;
+            """,
+                (longitude, latitude),
+            )
+
+        res = cur.fetchone()
+        cur.close()
+
+        if res is None:
+            raise ValueError("No matching file found near given coordinate.")
+
+        id, fp = res
+
+        return pd.read_csv(fp, index_col=0), _meta_dict_from_id(self._conn, id)
+
+    # TODO: add skip bad dims support
+    # TODO: add overlapping time checks, arguments
+    def load_many(
+        self,
+        source_name: str | None = None,
+        limit: int | None = None,
+        skip_bad_dims: bool = False,
+        spatial_search: bool = False,
+        spatial_search_latitude0: float | None = None,
+        spatial_search_longitude0: float | None = None,
+        spatial_search_distance_floor: float | None = None,
+    ) -> tuple[xr.Dataset, pd.DataFrame]:
+        res = None
+        if limit is not None and spatial_search is False and source_name is not None:
+            res = queries.limit_from_source(
+                conn=self._conn, source_name=source_name, limit=limit
+            )
+
+        elif limit is None and spatial_search is False and source_name is not None:
+            res = queries.all_from_source(conn=self._conn, source_name=source_name)
+
+        elif spatial_search is True:
+            res = utilities.greedy_nearest_neighbors(
+                conn=self._conn,
+                limit=limit,
+                source_name=source_name,
+                latitude=spatial_search_latitude0,
+                longitude=spatial_search_longitude0,
+                distance_floor=spatial_search_distance_floor,
+            )
+        else:
+            raise ValueError("improper parameters passed to method. no query performed")
+
+        weather_query, meta_data, meta_index = utilities._parse_id_fp_serial_res(
+            res=res
         )
 
-        conn.commit()
+        dfs = [(id, pd.read_csv(fname)) for id, fname in weather_query]
+
+        # check if dataframe dimensions are different, if so report issue
+        # option to skip bad dataframes?
+        if any(dfs[0][1].shape != df.shape for _id, df in dfs[1:]):  # generator expr
+            raise ValueError(
+                """mismatched dimensions... (expand error for usefulness)"""
+            )
+
+        weather_ds = xr.combine_by_coords(
+            [
+                df_i.set_index("time")
+                .to_xarray()
+                .assign_coords({"gid": id})
+                .expand_dims("gid")
+                for id, df_i in dfs
+            ],
+        )
+
+        meta_df = pd.DataFrame(data=meta_data, index=meta_index)
+
+        return weather_ds, meta_df
 
 
 # we do not want this available at the top level
@@ -114,111 +255,3 @@ def _meta_dict_from_id(
     length, source_name, tmy, altitude, serial = res
 
     return serial
-
-
-def sources(conn: connection) -> dict:
-    """
-    Returns a dictionary mapping unqiue source_names to its number of files in storage.
-
-    ```{name: file_count}```
-    """
-    results = queries.count_by_source(conn=conn)
-
-    return {source: count for source, count in results}
-
-
-def load_single(
-    conn: connection, latitude: float, longitude: float, source_name: str = None
-) -> tuple[pd.DataFrame, dict]:
-    """
-    Load the closest file pair.
-
-    Optionally select a source, name must match exactly.
-    """
-
-    cur = conn.cursor()
-
-    if source_name:
-        cur.execute(
-            """
-            SELECT f.id, f.file_path
-            FROM files f
-            JOIN meta m ON f.id = m.id
-            WHERE m.source_name = %s
-            ORDER BY coords <-> ST_SetSRID(ST_MakePoint(%s, %s), 4326)
-            LIMIT 1;
-        """,
-            (source_name.lower(), longitude, latitude),
-        )
-    else:  # any source
-        cur.execute(
-            """
-            SELECT id, file_path
-            FROM files
-            ORDER BY coords <-> ST_SetSRID(ST_MakePoint(%s, %s), 4326)
-            LIMIT 1;
-        """,
-            (longitude, latitude),
-        )
-
-    res = cur.fetchone()
-    cur.close()
-
-    if res is None:
-        raise ValueError("No matching file found near given coordinate.")
-
-    id, fp = res
-
-    return pd.read_csv(fp, index_col=0), _meta_dict_from_id(conn, id)
-
-
-# TODO: add skip bad dims support
-# TODO: add overlapping time checks, arguments
-def load_many(
-    conn: connection,
-    source_name: str = None,
-    limit: int = None,
-    skip_bad_dims: bool = False,
-    spatial_search: bool = False,
-    spatial_search_latitude0: float = None,
-    spatial_search_longitude0: float = None,
-    spatial_search_distance_floor: float = None,
-) -> tuple[xr.Dataset, pd.DataFrame]:
-    if limit is not None and spatial_search is False:
-        res = queries.limit_from_source(conn=conn, source_name=source_name, limit=limit)
-
-    elif limit is None and spatial_search is False:
-        res = queries.all_from_source(conn=conn, source_name=source_name)
-
-    elif spatial_search is True:
-        res = utilities.greedy_nearest_neighbors(
-            conn=conn,
-            limit=limit,
-            source_name=source_name,
-            latitude=spatial_search_latitude0,
-            longitude=spatial_search_longitude0,
-            distance_floor=spatial_search_distance_floor,
-        )
-
-    weather_query, meta_data, meta_index = utilities._parse_id_fp_serial_res(res=res)
-
-    dfs = [(id, pd.read_csv(fname)) for id, fname in weather_query]
-
-    # check if dataframe dimensions are different, if so report issue
-    # option to skip bad dataframes?
-    if any(dfs[0][1].shape != df.shape for _id, df in dfs[1:]):  # generator expr
-        raise ValueError("""mismatched dimensions... (expand error for usefulness)""")
-
-    weather_ds = xr.combine_by_coords(
-        [
-            df_i.set_index("time")
-            .to_xarray()
-            .assign_coords({"gid": id})
-            .expand_dims("gid")
-            for id, df_i in dfs
-        ],
-    )
-
-    meta_df = pd.DataFrame(data=meta_data, index=meta_index)
-
-    return weather_ds, meta_df
