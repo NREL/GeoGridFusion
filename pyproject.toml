@@ -31,7 +31,8 @@ dependencies = [
     "IPython",
     "pyyaml",
     "psycopg2",
-    "importlib_metadata"
+    "importlib_metadata",
+    "docker"
 ]
 dynamic = ["version"]
 
@@ -56,7 +57,7 @@ dev=[
 ]
 
 all = [
-    "geogridstore[docs, test, build]",
+    "geogridstore[docs, test, dev, build]",
 ]
 
 [tool.setuptools.packages.find]
@@ -68,3 +69,6 @@ addopts = [
     "-p no:warnings",
     "--verbose",
 ]
+
+# enables using git tags for versioning in build pipeline
+[tool.setuptools_scm]

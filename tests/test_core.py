@@ -2,7 +2,10 @@ import geogridfusion
 
 
 def test_version():
-    conn = geogridfusion.start()
+    fusion = geogridfusion.geogridfusionStore()
+    fusion.connect() 
+
+    conn = fusion._conn
 
     with conn.cursor() as cur:
         cur.execute("SELECT version()")
@@ -19,9 +22,10 @@ def test_initialize_tables():
     """
     this auto-initalizes tables for us
     """
+    fusion = geogridfusion.geogridfusionStore()
+    fusion.connect() 
 
-    # auto-initialize-tables for us
-    conn = geogridfusion.start()
+    conn = fusion._conn
 
     with conn.cursor() as cur:
         cur.execute("""
@@ -41,9 +45,11 @@ def test_initialize_tables():
 
 
 def test_sources():
-    conn = geogridfusion.start()
+
+    fusion = geogridfusion.geogridfusionStore()
+    fusion.connect() 
 
     # nothing stored yet
-    result = geogridfusion.sources(conn=conn)
+    result = fusion.sources()
 
     assert result == {}
